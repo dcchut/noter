@@ -1,0 +1,11 @@
+[package]
+name = "dcc-template-bin"
+version = "0.1.1"
+authors = ["Robert Usher <266585+dcchut@users.noreply.github.com>"]
+edition = "2018"
+description = "A template for creating Rust binary applications."
+readme = "README.md"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/dcchut/dcc-template-bin"
+
+[dependencies]
