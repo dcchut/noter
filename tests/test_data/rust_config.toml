@@ -1,0 +1,40 @@
+directory = "unreleased_notes"
+
+filename = "ReleaseNotes.rst"
+title_format = "v{version} - {project_date}"
+issue_format = "`{issue} <https://www.example.com/{issue}>`_"
+
+[[variant]]
+    extension = "breaking"
+    name = "Incompatible Changes"
+    show_content = true
+
+[[variant]]
+    extension = "build"
+    name = "Build and Packaging"
+    show_content = true
+
+[[variant]]
+    extension = "feature"
+    name = "Features"
+    show_content = true
+
+[[variant]]
+    extension = "bugfix"
+    name = "Bugfixes"
+    show_content = true
+
+[[variant]]
+    extension = "doc"
+    name = "Improved Documentation"
+    show_content = true
+
+[[variant]]
+    extension = "deprecation"
+    name = "Deprecations"
+    show_content = true
+
+[[variant]]
+    extension = "refactor"
+    name = "Refactors"
+    show_content = true
