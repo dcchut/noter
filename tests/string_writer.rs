@@ -1,25 +1,28 @@
-use noter::variant;
+use noter::{variant, NoteFormatter};
 use noter::{NoteWriter, StringWriter};
 
-#[test]
-fn test_string_writer() {
-    let mut writer = StringWriter::new();
-
+fn basic_writer_example<F: NoteFormatter<Output = Vec<String>>>(writer: &mut StringWriter<F>) {
     writer.title("A title string");
     writer.spacing(1);
 
-    writer.start_variant_list(variant!("basic", "Basic notes", true));
-    writer.note(
+    writer.variant_header(variant!("basic", "Basic notes", true));
+    writer.release_note(
         "TICKET0001",
         "Improve something or other",
         "<www.google.com>",
     );
-    writer.note(
+    writer.release_note(
         "TICKET0002",
         "Improve something else too",
         "<www.google.com>",
     );
-    writer.end_variant();
+    writer.variant_footer();
+}
+
+#[test]
+fn test_string_writer_text() {
+    let mut writer = StringWriter::text();
+    basic_writer_example(&mut writer);
 
     assert_eq!(
         writer.write(),
@@ -28,6 +31,22 @@ fn test_string_writer() {
 
 Basic notes
 ===========
+ - TICKET0001: Improve something or other <www.google.com>
+ - TICKET0002: Improve something else too <www.google.com>
+"#
+    );
+}
+
+#[test]
+fn test_string_writer_markdown() {
+    let mut writer = StringWriter::markdown();
+    basic_writer_example(&mut writer);
+
+    assert_eq!(
+        writer.write(),
+        r#"# A title string
+
+## Basic notes
  - TICKET0001: Improve something or other <www.google.com>
  - TICKET0002: Improve something else too <www.google.com>
 "#
