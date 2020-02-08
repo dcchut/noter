@@ -6,7 +6,7 @@ use structopt::StructOpt;
 use anyhow::{anyhow, bail, Context, Result};
 use chrono::Local;
 use noter::configs::{Configuration, NoteVariant};
-use noter::{NoteWriter, StringWriter};
+use noter::{NoteFormatter, NoteWriter, StringWriter};
 use std::collections::HashMap;
 
 #[derive(StructOpt, Debug)]
@@ -46,6 +46,56 @@ fn find_variant<'cfg>(config: &'cfg Configuration, file_name: &str) -> Option<&'
         }
     }
     None
+}
+
+fn compile_release_notes<F: NoteFormatter<Output = Vec<String>>>(
+    writer: &mut StringWriter<F>,
+    config: &Configuration,
+    notes_by_variant: &HashMap<&NoteVariant, Vec<(String, String)>>,
+) -> Result<String> {
+    // Format the title
+    let title_format = {
+        let mut title_map = HashMap::new();
+        title_map.insert(
+            String::from("project_date"),
+            Local::today().format("%Y-%m-%d").to_string(),
+        );
+        // TODO: parameterize this or infer it from somewhere
+        title_map.insert(String::from("version"), String::from("1.3.1"));
+
+        // now format the title formatting string
+        strfmt::strfmt(&config.title_format, &title_map)
+    }
+    .with_context(|| "invalid `title_format` given")?;
+
+    // add the title in
+    writer._title(title_format);
+
+    // now write out each variant type
+    for variant in config.variant.iter() {
+        if let Some(release_notes) = notes_by_variant.get(variant) {
+            // write the header for this variant
+            writer.variant_header(variant);
+
+            // write each of the release notes
+            for (base_file_name, note_contents) in release_notes {
+                // format the issue string
+                let issue = {
+                    let mut issue_map = HashMap::new();
+                    issue_map.insert(String::from("issue"), String::from(base_file_name));
+
+                    strfmt::strfmt(&config.issue_format, &issue_map)
+                }
+                .with_context(|| "invalid `issue_format` given")?;
+
+                writer._release_note(variant, base_file_name, note_contents, issue);
+            }
+
+            writer.variant_footer();
+        }
+    }
+
+    Ok(writer.write())
 }
 
 fn main() -> Result<()> {
@@ -96,53 +146,22 @@ fn main() -> Result<()> {
         }
     }
 
+    // if there are no release notes, do nothing (TODO: parameterize this?)
+    if notes_by_variant.is_empty() {
+        bail!("no release notes found");
+    }
+
     // now create the actual release notes
-    // TODO: parameterize the output format / infer from output filename!!
-    let mut writer = StringWriter::markdown();
-
-    // Format the title
-    let title_format = {
-        let mut title_map = HashMap::new();
-        title_map.insert(
-            String::from("project_date"),
-            Local::today().format("%Y-%m-%d").to_string(),
+    let release_notes: String = if config.filename.ends_with(".md") {
+        compile_release_notes(&mut StringWriter::markdown(), &config, &notes_by_variant)?
+    } else if config.filename.ends_with(".rst") {
+        compile_release_notes(&mut StringWriter::text(), &config, &notes_by_variant)?
+    } else {
+        bail!(
+            "expected `filename` ending with .md or .rst, found {}",
+            config.filename
         );
-        // TODO: parameterize this or infer it from somewhere
-        title_map.insert(String::from("version"), String::from("1.3.1"));
-
-        // now format the title formatting string
-        strfmt::strfmt(&config.title_format, &title_map)
-    }
-    .with_context(|| "invalid `title_format` given")?;
-
-    // add the title in
-    writer._title(title_format);
-
-    // now write out each variant type
-    for variant in config.variant.iter() {
-        if let Some(release_notes) = notes_by_variant.get(variant) {
-            // write the header for this variant
-            writer.variant_header(variant);
-
-            // write each of the release notes
-            for (base_file_name, note_contents) in release_notes {
-                // format the issue string
-                let issue = {
-                    let mut issue_map = HashMap::new();
-                    issue_map.insert(String::from("issue"), String::from(base_file_name));
-
-                    strfmt::strfmt(&config.issue_format, &issue_map)
-                }
-                .with_context(|| "invalid `issue_format` given")?;
-
-                writer._release_note(variant, base_file_name, note_contents, issue);
-            }
-
-            writer.variant_footer();
-        }
-    }
-
-    let release_notes = writer.write();
+    };
 
     if opt.draft {
         // for a draft, just print the release notes to stdout
