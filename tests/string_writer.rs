@@ -1,7 +1,7 @@
-use noter::{variant, NoteFormatter};
+use noter::variant;
 use noter::{NoteWriter, StringWriter};
 
-fn basic_writer_example<F: NoteFormatter<Output = Vec<String>>>(writer: &mut StringWriter<F>) {
+fn basic_writer_example(writer: &mut StringWriter) {
     writer.title("A title string");
     writer.spacing(1);
 

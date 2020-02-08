@@ -1,13 +1,13 @@
+use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use chrono::Local;
 use structopt::StructOpt;
 
 use anyhow::{anyhow, bail, Context, Result};
-use chrono::Local;
+use noter::{NoteWriter, StringWriter};
 use noter::configs::{Configuration, NoteVariant};
-use noter::{NoteFormatter, NoteWriter, StringWriter};
-use std::collections::HashMap;
 
 #[derive(StructOpt, Debug)]
 #[structopt(name = "noter")]
@@ -52,8 +52,8 @@ fn find_variant<'cfg>(config: &'cfg Configuration, file_name: &str) -> Option<&'
     None
 }
 
-fn compile_release_notes<F: NoteFormatter<Output = Vec<String>>>(
-    writer: &mut StringWriter<F>,
+fn compile_release_notes(
+    writer: &mut StringWriter,
     config: &Configuration,
     version: String,
     notes_by_variant: &HashMap<&NoteVariant, Vec<(String, String)>>,

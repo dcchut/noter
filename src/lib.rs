@@ -1,5 +1,4 @@
 use crate::configs::NoteVariant;
-use serde::export::PhantomData;
 
 pub mod configs;
 mod macros;
@@ -49,154 +48,66 @@ pub trait NoteWriter {
     fn write(&mut self) -> String;
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct StringWriter<F>
-where
-    F: NoteFormatter<Output = Vec<String>>,
-{
-    lines: Vec<String>,
-    formatter: PhantomData<F>,
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum NoteFormatter {
+    Text,
+    Markdown,
 }
 
-impl<F> StringWriter<F>
-where
-    F: NoteFormatter<Output = Vec<String>>,
-{
-    #[allow(clippy::new_without_default)]
-    pub fn new() -> Self {
-        Self {
-            lines: Vec::new(),
-            formatter: Default::default(),
+impl NoteFormatter {
+    pub fn title(self, title: &str) -> Vec<String> {
+        match self {
+            NoteFormatter::Text => {
+                let title_length = title.len();
+                vec![String::from(title), "=".repeat(title_length)]
+            }
+            NoteFormatter::Markdown => vec![format!("# {}", title)],
+        }
+    }
+
+    pub fn variant_header(self, variant: &NoteVariant) -> Vec<String> {
+        match self {
+            NoteFormatter::Text => {
+                let variant_title = variant.name.as_str();
+                vec![String::from(variant_title), "-".repeat(variant_title.len())]
+            }
+            NoteFormatter::Markdown => vec![format!("## {}", &variant.name)],
         }
     }
 }
 
-impl StringWriter<MarkdownNoteFormatter> {
-    pub fn markdown() -> Self {
-        Self::new()
-    }
+#[derive(Debug, Clone, PartialEq)]
+pub struct StringWriter {
+    lines: Vec<String>,
+    formatter: NoteFormatter,
 }
 
-impl StringWriter<TextNoteFormatter> {
+impl StringWriter {
+    pub fn new(formatter: NoteFormatter) -> Self {
+        Self {
+            lines: Vec::new(),
+            formatter,
+        }
+    }
+
     pub fn text() -> Self {
-        Self::new()
+        Self::new(NoteFormatter::Text)
+    }
+
+    pub fn markdown() -> Self {
+        Self::new(NoteFormatter::Markdown)
     }
 }
 
-pub trait NoteFormatter {
-    type Output;
-
-    fn title(title: &str) -> Self::Output;
-    fn variant_header(variant: &NoteVariant) -> Self::Output;
-    fn release_note(
-        ticket: &str,
-        description: &str,
-        issue: &str,
-        variant: &NoteVariant,
-    ) -> Self::Output;
-}
-
-pub struct TextNoteFormatter {}
-
-impl NoteFormatter for TextNoteFormatter {
-    type Output = Vec<String>;
-
-    #[inline(always)]
-    fn title(title: &str) -> Self::Output {
-        let title_length = title.len();
-        vec![String::from(title), vec!["="; title_length].join("")]
-    }
-
-    #[inline(always)]
-    fn variant_header(variant: &NoteVariant) -> Self::Output {
-        let variant_title = variant.name.as_str();
-        vec![
-            String::from(variant_title),
-            vec!["-"; variant_title.len()].join(""),
-        ]
-    }
-
-    #[inline(always)]
-    fn release_note(
-        ticket: &str,
-        description: &str,
-        issue: &str,
-        variant: &NoteVariant,
-    ) -> Self::Output {
-        // construct our line
-        let line = {
-            let mut current_line =
-                String::with_capacity(6 + ticket.len() + description.len() + issue.len());
-            current_line.push_str(" - ");
-            current_line.push_str(ticket);
-            current_line.push_str(": ");
-            if variant.show_content {
-                current_line.push_str(description);
-                current_line.push(' ');
-            }
-            current_line.push_str(issue);
-
-            current_line
-        };
-
-        vec![line]
-    }
-}
-
-pub struct MarkdownNoteFormatter {}
-
-impl NoteFormatter for MarkdownNoteFormatter {
-    type Output = Vec<String>;
-
-    #[inline(always)]
-    fn title(title: &str) -> Self::Output {
-        vec![format!("# {}", title)]
-    }
-
-    #[inline(always)]
-    fn variant_header(variant: &NoteVariant) -> Self::Output {
-        vec![format!("## {}", &variant.name)]
-    }
-
-    #[inline(always)]
-    fn release_note(
-        ticket: &str,
-        description: &str,
-        issue: &str,
-        variant: &NoteVariant,
-    ) -> Self::Output {
-        // construct our line
-        let line = {
-            let mut current_line =
-                String::with_capacity(6 + ticket.len() + description.len() + issue.len());
-            current_line.push_str(" - ");
-            current_line.push_str(ticket);
-            current_line.push_str(": ");
-            if variant.show_content {
-                current_line.push_str(description);
-                current_line.push(' ');
-            }
-            current_line.push_str(issue);
-
-            current_line
-        };
-
-        vec![line]
-    }
-}
-
-impl<F> NoteWriter for StringWriter<F>
-where
-    F: NoteFormatter<Output = Vec<String>>,
-{
+impl NoteWriter for StringWriter {
     #[inline(always)]
     fn title(&mut self, title: &str) {
-        self.lines.extend(F::title(title));
+        self.lines.extend(self.formatter.title(title));
     }
 
     #[inline(always)]
     fn variant_header(&mut self, variant: &NoteVariant) {
-        self.lines.extend(F::variant_header(variant));
+        self.lines.extend(self.formatter.variant_header(variant));
     }
 
     #[inline(always)]
@@ -207,8 +118,23 @@ where
         description: &str,
         issue: &str,
     ) {
-        self.lines
-            .extend(F::release_note(ticket, description, issue, variant));
+        // construct our line
+        let line = {
+            let mut current_line =
+                String::with_capacity(6 + ticket.len() + description.len() + issue.len());
+            current_line.push_str(" - ");
+            current_line.push_str(ticket);
+            current_line.push_str(": ");
+            if variant.show_content {
+                current_line.push_str(description);
+                current_line.push(' ');
+            }
+            current_line.push_str(issue);
+
+            current_line
+        };
+
+        self.lines.push(line);
     }
 
     #[inline(always)]
