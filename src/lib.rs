@@ -56,6 +56,7 @@ impl<F> StringWriter<F>
 where
     F: NoteFormatter<Output = Vec<String>>,
 {
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Self {
             lines: Vec::new(),
