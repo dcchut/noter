@@ -101,7 +101,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "noter"
-version = "0.2.1+dev"
+version = "0.3.0"
 dependencies = [
  "anyhow 1.0.26 (registry+https://github.com/rust-lang/crates.io-index)",
  "cargo_metadata 0.9.1 (registry+https://github.com/rust-lang/crates.io-index)",
