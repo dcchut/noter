@@ -5,13 +5,17 @@ fn basic_writer_example<F: NoteFormatter<Output = Vec<String>>>(writer: &mut Str
     writer.title("A title string");
     writer.spacing(1);
 
-    writer.variant_header(variant!("basic", "Basic notes", true));
+    let variant = variant!("basic", "Basic notes", true);
+
+    writer.variant_header(&variant);
     writer.release_note(
+        &variant,
         "TICKET0001",
         "Improve something or other",
         "<www.google.com>",
     );
     writer.release_note(
+        &variant,
         "TICKET0002",
         "Improve something else too",
         "<www.google.com>",

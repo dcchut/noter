@@ -10,27 +10,34 @@ pub trait NoteWriter {
     #[inline(always)]
     fn _title<T: AsRef<str>>(&mut self, title: T) {
         self.title(title.as_ref());
+        self.spacing(1);
     }
 
     /// Write out a title line.
     fn title(&mut self, title: &str);
 
     /// Start an itemized list of release notes for a given variant.
-    fn variant_header(&mut self, variant: NoteVariant);
+    fn variant_header(&mut self, variant: &NoteVariant);
 
     /// Write a single release note
     #[inline(always)]
     fn _release_note<S: AsRef<str>, T: AsRef<str>, U: AsRef<str>>(
         &mut self,
+        variant: &NoteVariant,
         ticket: S,
         description: T,
         issue: U,
     ) {
-        self.release_note(ticket.as_ref(), description.as_ref(), issue.as_ref());
+        self.release_note(
+            variant,
+            ticket.as_ref(),
+            description.as_ref(),
+            issue.as_ref(),
+        );
     }
 
     /// Write a single release note
-    fn release_note(&mut self, ticket: &str, description: &str, issue: &str);
+    fn release_note(&mut self, variant: &NoteVariant, ticket: &str, description: &str, issue: &str);
 
     /// End the most recently started variant list.
     fn variant_footer(&mut self);
@@ -48,7 +55,6 @@ where
     F: NoteFormatter<Output = Vec<String>>,
 {
     lines: Vec<String>,
-    current_variant: Option<NoteVariant>,
     formatter: PhantomData<F>,
 }
 
@@ -60,7 +66,6 @@ where
     pub fn new() -> Self {
         Self {
             lines: Vec::new(),
-            current_variant: None,
             formatter: Default::default(),
         }
     }
@@ -190,16 +195,18 @@ where
     }
 
     #[inline(always)]
-    fn variant_header(&mut self, variant: NoteVariant) {
-        self.lines.extend(F::variant_header(&variant));
-        self.current_variant = Some(variant);
+    fn variant_header(&mut self, variant: &NoteVariant) {
+        self.lines.extend(F::variant_header(variant));
     }
 
     #[inline(always)]
-    fn release_note(&mut self, ticket: &str, description: &str, issue: &str) {
-        // it's okay to panic if we're not in a variant here
-        let variant = self.current_variant.as_ref().unwrap();
-
+    fn release_note(
+        &mut self,
+        variant: &NoteVariant,
+        ticket: &str,
+        description: &str,
+        issue: &str,
+    ) {
         self.lines
             .extend(F::release_note(ticket, description, issue, variant));
     }
@@ -208,8 +215,6 @@ where
     fn variant_footer(&mut self) {
         // add a newline
         self.spacing(1);
-        // clear out the current variant info
-        self.current_variant.take();
     }
 
     #[inline(always)]
