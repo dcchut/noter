@@ -9,7 +9,6 @@ pub trait NoteWriter {
     #[inline(always)]
     fn _title<T: AsRef<str>>(&mut self, title: T) {
         self.title(title.as_ref());
-        self.spacing(1);
     }
 
     /// Write out a title line.
@@ -59,9 +58,9 @@ impl NoteFormatter {
         match self {
             NoteFormatter::Text => {
                 let title_length = title.len();
-                vec![String::from(title), "=".repeat(title_length)]
+                vec![String::from(title), "=".repeat(title_length), String::new()]
             }
-            NoteFormatter::Markdown => vec![format!("# {}", title)],
+            NoteFormatter::Markdown => vec![format!("# {}", title), String::new()],
         }
     }
 
@@ -69,9 +68,13 @@ impl NoteFormatter {
         match self {
             NoteFormatter::Text => {
                 let variant_title = variant.name.as_str();
-                vec![String::from(variant_title), "-".repeat(variant_title.len())]
+                vec![
+                    String::from(variant_title),
+                    "-".repeat(variant_title.len()),
+                    String::new(),
+                ]
             }
-            NoteFormatter::Markdown => vec![format!("## {}", &variant.name)],
+            NoteFormatter::Markdown => vec![format!("## {}", &variant.name), String::new()],
         }
     }
 }
@@ -145,8 +148,16 @@ impl NoteWriter for StringWriter {
 
     #[inline(always)]
     fn spacing(&mut self, lines: usize) {
+        // if spacing is called when self.lines is empty, it won't actually make a new line in the output
+        // so add an extra empty line in, if thats the case.
+        let total_lines = if self.lines.is_empty() {
+            lines + 1
+        } else {
+            lines
+        };
+
         // empty lines are blank lines
-        for _ in 0..lines {
+        for _ in 0..total_lines {
             self.lines.push(String::new());
         }
     }
@@ -158,5 +169,113 @@ impl NoteWriter for StringWriter {
         std::mem::swap(&mut lines, &mut self.lines);
 
         lines.join("\n")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_string_writer_text() {
+        let mut writer = StringWriter::text();
+        writer.spacing(2);
+        assert_eq!(writer.write(), "\n\n");
+
+        let mut writer = StringWriter::text();
+        writer.title("Hello world");
+        writer.spacing(1);
+        assert_eq!(writer.write(), "Hello world\n===========\n\n");
+
+        let mut writer = StringWriter::text();
+        writer.title("TITLE");
+        let variant = variant!("basic", "Basic Notes", true);
+        writer.variant_header(&variant);
+        writer.release_note(&variant, "ticket", "description", "issue");
+        writer.variant_footer();
+        assert_eq!(
+            writer.write(),
+            "TITLE\n=====\n\nBasic Notes\n-----------\n\n - ticket: description issue\n"
+        );
+    }
+
+    #[test]
+    fn test_string_writer_markdown() {
+        let mut writer = StringWriter::markdown();
+        writer.spacing(2);
+        assert_eq!(writer.write(), "\n\n");
+
+        let mut writer = StringWriter::markdown();
+        writer.title("Hello world");
+        writer.spacing(2);
+        assert_eq!(writer.write(), "# Hello world\n\n\n");
+
+        let mut writer = StringWriter::markdown();
+        writer.title("TITLE");
+        let variant = variant!("basic", "Basic Notes", true);
+        writer.variant_header(&variant);
+        writer.release_note(&variant, "ticket", "description", "issue");
+        writer.variant_footer();
+        assert_eq!(
+            writer.write(),
+            "# TITLE\n\n## Basic Notes\n\n - ticket: description issue\n"
+        );
+    }
+
+    fn basic_writer_example(writer: &mut StringWriter) {
+        writer.title("A title string");
+
+        let variant = variant!("basic", "Basic notes", true);
+
+        writer.variant_header(&variant);
+        writer.release_note(
+            &variant,
+            "TICKET0001",
+            "Improve something or other",
+            "<www.google.com>",
+        );
+        writer.release_note(
+            &variant,
+            "TICKET0002",
+            "Improve something else too",
+            "<www.google.com>",
+        );
+        writer.variant_footer();
+    }
+
+    #[test]
+    fn test_string_writer_text_2() {
+        let mut writer = StringWriter::text();
+        basic_writer_example(&mut writer);
+
+        assert_eq!(
+            writer.write(),
+            r#"A title string
+==============
+
+Basic notes
+-----------
+
+ - TICKET0001: Improve something or other <www.google.com>
+ - TICKET0002: Improve something else too <www.google.com>
+"#
+        );
+    }
+
+    #[test]
+    fn test_string_writer_markdown_2() {
+        let mut writer = StringWriter::markdown();
+        basic_writer_example(&mut writer);
+
+        assert_eq!(
+            writer.write(),
+            r#"# A title string
+
+## Basic notes
+
+ - TICKET0001: Improve something or other <www.google.com>
+ - TICKET0002: Improve something else too <www.google.com>
+"#
+        );
     }
 }

@@ -6,8 +6,8 @@ use chrono::Local;
 use structopt::StructOpt;
 
 use anyhow::{anyhow, bail, Context, Result};
-use noter::{NoteWriter, StringWriter};
 use noter::configs::{Configuration, NoteVariant};
+use noter::{NoteWriter, StringWriter};
 
 #[derive(StructOpt, Debug)]
 #[structopt(name = "noter")]
