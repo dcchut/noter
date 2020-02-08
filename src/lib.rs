@@ -104,7 +104,7 @@ impl NoteFormatter for TextNoteFormatter {
     #[inline(always)]
     fn title(title: &str) -> Self::Output {
         let title_length = title.len();
-        vec![String::from(title), vec!["-"; title_length].join("")]
+        vec![String::from(title), vec!["="; title_length].join("")]
     }
 
     #[inline(always)]
@@ -112,7 +112,7 @@ impl NoteFormatter for TextNoteFormatter {
         let variant_title = variant.name.as_str();
         vec![
             String::from(variant_title),
-            vec!["="; variant_title.len()].join(""),
+            vec!["-"; variant_title.len()].join(""),
         ]
     }
 

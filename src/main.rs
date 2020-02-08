@@ -19,6 +19,10 @@ struct Opt {
     /// Folder containing config file to use
     #[structopt(short, long, parse(from_os_str))]
     config: Option<PathBuf>,
+
+    /// Version to use in release notes
+    #[structopt(short, long)]
+    version: Option<String>,
 }
 
 fn read_config<P: AsRef<Path>>(dir: P) -> std::result::Result<Configuration, anyhow::Error> {
@@ -51,6 +55,7 @@ fn find_variant<'cfg>(config: &'cfg Configuration, file_name: &str) -> Option<&'
 fn compile_release_notes<F: NoteFormatter<Output = Vec<String>>>(
     writer: &mut StringWriter<F>,
     config: &Configuration,
+    version: String,
     notes_by_variant: &HashMap<&NoteVariant, Vec<(String, String)>>,
 ) -> Result<String> {
     // Format the title
@@ -60,8 +65,8 @@ fn compile_release_notes<F: NoteFormatter<Output = Vec<String>>>(
             String::from("project_date"),
             Local::today().format("%Y-%m-%d").to_string(),
         );
-        // TODO: parameterize this or infer it from somewhere
-        title_map.insert(String::from("version"), String::from("1.3.1"));
+
+        title_map.insert(String::from("version"), version);
 
         // now format the title formatting string
         strfmt::strfmt(&config.title_format, &title_map)
@@ -96,6 +101,26 @@ fn compile_release_notes<F: NoteFormatter<Output = Vec<String>>>(
     }
 
     Ok(writer.write())
+}
+
+fn version_number(version_override: Option<String>) -> Result<String> {
+    if let Some(version) = version_override {
+        return Ok(version);
+    }
+
+    // otherwise attempt to discover the version number using cargo
+    let mut cmd = cargo_metadata::MetadataCommand::new();
+    let metadata = cmd
+        .exec()
+        .with_context(|| "failed to determine version number")?;
+
+    if let Some(resolve) = &metadata.resolve {
+        if let Some(package_id) = &resolve.root {
+            return Ok(metadata[package_id].version.to_string());
+        }
+    }
+
+    bail!("failed to determine version number");
 }
 
 fn main() -> Result<()> {
@@ -151,11 +176,23 @@ fn main() -> Result<()> {
         bail!("no release notes found");
     }
 
+    let version = version_number(opt.version)?;
+
     // now create the actual release notes
     let release_notes: String = if config.filename.ends_with(".md") {
-        compile_release_notes(&mut StringWriter::markdown(), &config, &notes_by_variant)?
+        compile_release_notes(
+            &mut StringWriter::markdown(),
+            &config,
+            version,
+            &notes_by_variant,
+        )?
     } else if config.filename.ends_with(".rst") {
-        compile_release_notes(&mut StringWriter::text(), &config, &notes_by_variant)?
+        compile_release_notes(
+            &mut StringWriter::text(),
+            &config,
+            version,
+            &notes_by_variant,
+        )?
     } else {
         bail!(
             "expected `filename` ending with .md or .rst, found {}",
@@ -167,8 +204,29 @@ fn main() -> Result<()> {
         // for a draft, just print the release notes to stdout
         println!("{}", release_notes);
     } else {
-        // otherwise, add the release notes to the current release notes file
-        // TODO
+        // get the path to the release notes
+        let release_notes_path = base_dir.join(&config.filename);
+
+        let content = if release_notes_path.is_file() {
+            let existing_content = fs::read_to_string(&release_notes_path).with_context(|| {
+                format!(
+                    "failed to read release notes from {}",
+                    release_notes_path.display()
+                )
+            })?;
+
+            release_notes + "\n" + &existing_content
+        } else {
+            release_notes
+        };
+
+        // now write the output to the release notes file
+        fs::write(&release_notes_path, content).with_context(|| {
+            format!(
+                "failed to write release notes to {}",
+                release_notes_path.display()
+            )
+        })?;
     }
 
     Ok(())

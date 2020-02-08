@@ -31,10 +31,10 @@ fn test_string_writer_text() {
     assert_eq!(
         writer.write(),
         r#"A title string
---------------
+==============
 
 Basic notes
-===========
+-----------
  - TICKET0001: Improve something or other <www.google.com>
  - TICKET0002: Improve something else too <www.google.com>
 "#

@@ -1,6 +1,6 @@
 # noter
 
-An application for managing release notes.
+An application for managing release notes, inspired by towncrier.
 
 ### License
 Licensed under either of
