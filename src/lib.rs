@@ -124,8 +124,8 @@ impl NoteWriter for StringWriter {
         // construct our line
         let line = {
             let mut current_line =
-                String::with_capacity(6 + ticket.len() + description.len() + issue.len());
-            current_line.push_str(" - ");
+                String::with_capacity(5 + ticket.len() + description.len() + issue.len());
+            current_line.push_str("- ");
             current_line.push_str(ticket);
             current_line.push_str(": ");
             if variant.show_content {
@@ -195,7 +195,7 @@ mod tests {
         writer.variant_footer();
         assert_eq!(
             writer.write(),
-            "TITLE\n=====\n\nBasic Notes\n-----------\n\n - ticket: description issue\n"
+            "TITLE\n=====\n\nBasic Notes\n-----------\n\n- ticket: description issue\n"
         );
     }
 
@@ -218,7 +218,7 @@ mod tests {
         writer.variant_footer();
         assert_eq!(
             writer.write(),
-            "# TITLE\n\n## Basic Notes\n\n - ticket: description issue\n"
+            "# TITLE\n\n## Basic Notes\n\n- ticket: description issue\n"
         );
     }
 
@@ -256,8 +256,8 @@ mod tests {
 Basic notes
 -----------
 
- - TICKET0001: Improve something or other <www.google.com>
- - TICKET0002: Improve something else too <www.google.com>
+- TICKET0001: Improve something or other <www.google.com>
+- TICKET0002: Improve something else too <www.google.com>
 "#
         );
     }
@@ -273,8 +273,8 @@ Basic notes
 
 ## Basic notes
 
- - TICKET0001: Improve something or other <www.google.com>
- - TICKET0002: Improve something else too <www.google.com>
+- TICKET0001: Improve something or other <www.google.com>
+- TICKET0002: Improve something else too <www.google.com>
 "#
         );
     }
