@@ -28,4 +28,4 @@ version = "1.0"
 version = "0.4"
 
 [dependencies.cargo_metadata]
-version = "0.11"
+version = "0.12"
