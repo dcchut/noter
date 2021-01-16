@@ -1,7 +1,6 @@
 # noter
 
-[![Build Status](https://travis-ci.org/dcchut/noter.svg?branch=master)](https://travis-ci.org/dcchut/noter)
-[![codecov](https://codecov.io/gh/dcchut/noter/branch/master/graph/badge.svg)](https://codecov.io/gh/dcchut/noter)
+![Build Status](https://github.com/dcchut/noter/workflows/Push%20action/badge.svg?branch=master)
 
 An application for managing release notes, inspired by towncrier.
 
