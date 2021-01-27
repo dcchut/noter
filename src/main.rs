@@ -109,7 +109,7 @@ fn version_number(version_override: Option<String>) -> Result<String> {
     }
 
     // otherwise attempt to discover the version number using cargo
-    let mut cmd = cargo_metadata::MetadataCommand::new();
+    let cmd = cargo_metadata::MetadataCommand::new();
     let metadata = cmd
         .exec()
         .with_context(|| "failed to determine version number")?;
