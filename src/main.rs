@@ -34,8 +34,8 @@ fn read_config<P: AsRef<Path>>(dir: P) -> std::result::Result<Configuration, any
                     .with_context(|| format!("unable to load config {}", entry.path().display()))?;
 
                 // parse as config
-                return Ok(toml::from_slice(config.as_slice())
-                    .with_context(|| "unable to parse config")?);
+                return toml::from_slice(config.as_slice())
+                    .with_context(|| "unable to parse config");
             }
         }
     }
@@ -109,7 +109,7 @@ fn version_number(version_override: Option<String>) -> Result<String> {
     }
 
     // otherwise attempt to discover the version number using cargo
-    let mut cmd = cargo_metadata::MetadataCommand::new();
+    let cmd = cargo_metadata::MetadataCommand::new();
     let metadata = cmd
         .exec()
         .with_context(|| "failed to determine version number")?;
