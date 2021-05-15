@@ -26,17 +26,14 @@ struct Opt {
 }
 
 fn read_config<P: AsRef<Path>>(dir: P) -> std::result::Result<Configuration, anyhow::Error> {
-    for entry in fs::read_dir(dir.as_ref())? {
-        if let Ok(entry) = entry {
-            if entry.file_name() == "noter.toml" {
-                // read in the file
-                let config = fs::read(entry.path())
-                    .with_context(|| format!("unable to load config {}", entry.path().display()))?;
+    for entry in fs::read_dir(dir.as_ref())?.flatten() {
+        if entry.file_name() == "noter.toml" {
+            // read in the file
+            let config = fs::read(entry.path())
+                .with_context(|| format!("unable to load config {}", entry.path().display()))?;
 
-                // parse as config
-                return toml::from_slice(config.as_slice())
-                    .with_context(|| "unable to parse config");
-            }
+            // parse as config
+            return toml::from_slice(config.as_slice()).with_context(|| "unable to parse config");
         }
     }
 
@@ -145,29 +142,27 @@ fn main() -> Result<()> {
     let mut notes_by_variant: HashMap<&NoteVariant, Vec<(String, String)>> = HashMap::new();
 
     // read in all of the release notes
-    for entry in fs::read_dir(&release_notes_dir)? {
-        if let Ok(entry) = entry {
-            // only consider files
-            if !entry.path().is_file() {
-                continue;
-            }
+    for entry in fs::read_dir(&release_notes_dir)?.flatten() {
+        // only consider files
+        if !entry.path().is_file() {
+            continue;
+        }
 
-            let file_name = entry.file_name().to_string_lossy().to_string();
+        let file_name = entry.file_name().to_string_lossy().to_string();
 
-            // load the file to a string
-            let file_contents = fs::read_to_string(entry.path())?;
+        // load the file to a string
+        let file_contents = fs::read_to_string(entry.path())?;
 
-            // find the matching variant
-            if let Some(variant) = find_variant(&config, &file_name) {
-                // get the file_name sans the variant extension
-                let base_file_name =
-                    String::from(&file_name[..file_name.len() - (variant.extension.len() + 1)]);
+        // find the matching variant
+        if let Some(variant) = find_variant(&config, &file_name) {
+            // get the file_name sans the variant extension
+            let base_file_name =
+                String::from(&file_name[..file_name.len() - (variant.extension.len() + 1)]);
 
-                notes_by_variant
-                    .entry(variant)
-                    .or_default()
-                    .push((base_file_name, file_contents));
-            }
+            notes_by_variant
+                .entry(variant)
+                .or_default()
+                .push((base_file_name, file_contents));
         }
     }
 
