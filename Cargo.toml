@@ -16,7 +16,7 @@ features = ["derive"]
 version = "0.5"
 
 [dependencies.strfmt]
-version = "0.1"
+version = "0.2"
 
 [dependencies.structopt]
 version = "0.3"
