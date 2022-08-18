@@ -26,7 +26,7 @@ impl NoteVariant {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct Configuration {
     /// The directory (relative to the configuration file) in which release notes are stored.
     pub directory: String,
