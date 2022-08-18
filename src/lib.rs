@@ -79,7 +79,7 @@ impl NoteFormatter {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StringWriter {
     lines: Vec<String>,
     formatter: NoteFormatter,
