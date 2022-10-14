@@ -41,12 +41,10 @@ fn read_config<P: AsRef<Path>>(dir: P) -> std::result::Result<Configuration, any
 }
 
 fn find_variant<'cfg>(config: &'cfg Configuration, file_name: &str) -> Option<&'cfg NoteVariant> {
-    for variant in config.variant.iter() {
-        if file_name.ends_with(&variant.extension) {
-            return Some(variant);
-        }
-    }
-    None
+    config
+        .variant
+        .iter()
+        .find(|&variant| file_name.ends_with(&variant.extension))
 }
 
 fn compile_release_notes(
