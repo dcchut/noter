@@ -58,7 +58,7 @@ fn compile_release_notes(
         let mut title_map = HashMap::new();
         title_map.insert(
             String::from("project_date"),
-            Local::today().format("%Y-%m-%d").to_string(),
+            Local::now().format("%Y-%m-%d").to_string(),
         );
 
         title_map.insert(String::from("version"), version);
