@@ -60,7 +60,7 @@ impl NoteFormatter {
                 let title_length = title.len();
                 vec![String::from(title), "=".repeat(title_length), String::new()]
             }
-            NoteFormatter::Markdown => vec![format!("# {}", title), String::new()],
+            NoteFormatter::Markdown => vec![format!("# {title}"), String::new()],
         }
     }
 
