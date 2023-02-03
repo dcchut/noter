@@ -6,10 +6,10 @@ use noter::{configuration, variant};
 #[test]
 fn test_parse_rust_config() -> Result<(), Box<dyn Error>> {
     // load in a rust-format configuration file
-    let raw_config = std::fs::read("tests/test_data/rust_config.toml")?;
+    let raw_config = std::fs::read_to_string("tests/test_data/rust_config.toml")?;
 
     // parse as a configuration
-    let config: Configuration = toml::from_slice(raw_config.as_slice())?;
+    let config: Configuration = toml::from_str(&raw_config)?;
 
     // what we expect our configuration to look like
     let expected_configuration = configuration!(
