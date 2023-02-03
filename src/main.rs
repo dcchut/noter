@@ -29,11 +29,11 @@ fn read_config<P: AsRef<Path>>(dir: P) -> std::result::Result<Configuration, any
     for entry in fs::read_dir(dir.as_ref())?.flatten() {
         if entry.file_name() == "noter.toml" {
             // read in the file
-            let config = fs::read(entry.path())
+            let config = fs::read_to_string(entry.path())
                 .with_context(|| format!("unable to load config {}", entry.path().display()))?;
 
             // parse as config
-            return toml::from_slice(config.as_slice()).with_context(|| "unable to parse config");
+            return toml::from_str(&config).with_context(|| "unable to parse config");
         }
     }
 
