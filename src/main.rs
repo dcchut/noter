@@ -195,7 +195,7 @@ fn main() -> Result<()> {
 
     if opt.draft {
         // for a draft, just print the release notes to stdout
-        println!("{}", release_notes);
+        println!("{release_notes}");
     } else {
         // get the path to the release notes
         let release_notes_path = base_dir.join(&config.filename);
